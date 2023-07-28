@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+
+#define HASH_SIZE 100
 
 // RecordType
 struct RecordType
@@ -11,13 +14,13 @@ struct RecordType
 // Fill out this structure
 struct HashType
 {
-
+	struct RecordType* record;
 };
 
 // Compute the hash function
 int hash(int x)
 {
-
+	return x % HASH_SIZE;
 }
 
 // parses input file to an integer array
@@ -57,6 +60,8 @@ int parseData(char* inputFileName, struct RecordType** ppData)
 	return dataSz;
 }
 
+
+
 // prints the records
 void printRecords(struct RecordType pData[], int dataSz)
 {
@@ -67,6 +72,21 @@ void printRecords(struct RecordType pData[], int dataSz)
 		printf("\t%d %c %d\n", pData[i].id, pData[i].name, pData[i].order);
 	}
 	printf("\n\n");
+}
+
+void insertRecordIntoHash(struct HashType* hashTable, int hashSize, struct RecordType record)
+{
+    int index = hash(record.id);
+
+    // Separate Chaining - Handle collisions by using linked lists at each index
+    struct RecordType* newRecord = (struct RecordType*)malloc(sizeof(struct RecordType));
+    if (newRecord == NULL)
+    {
+        printf("Cannot allocate memory for the new record\n");
+        exit(-1);
+    }
+    *newRecord = record;
+    hashTable[index].record = newRecord;
 }
 
 // display records in the hash structure
@@ -80,6 +100,10 @@ void displayRecordsInHash(struct HashType *pHashArray, int hashSz)
 	for (i=0;i<hashSz;++i)
 	{
 		// if index is occupied with any records, print all
+		if (pHashArray[i].record != NULL)
+        {
+            printf("index %d -> %d, %c, %d\n", i, pHashArray[i].record->id, pHashArray[i].record->name, pHashArray[i].record->order);
+        }
 	}
 }
 
@@ -91,4 +115,38 @@ int main(void)
 	recordSz = parseData("input.txt", &pRecords);
 	printRecords(pRecords, recordSz);
 	// Your hash implementation
+
+	struct HashType* pHashTable = (struct HashType*)malloc(sizeof(struct HashType) * HASH_SIZE);
+    if (pHashTable == NULL)
+    {
+        printf("Cannot allocate memory for the hash table\n");
+        exit(-1);
+    }
+
+    
+    for (int i = 0; i < HASH_SIZE; ++i)
+    {
+        pHashTable[i].record = NULL;
+    }
+
+    
+    for (int i = 0; i < recordSz; ++i)
+    {
+        insertRecordIntoHash(pHashTable, HASH_SIZE, pRecords[i]);
+    }
+
+    
+    displayRecordsInHash(pHashTable, HASH_SIZE);
+
+    for (int i = 0; i < HASH_SIZE; ++i)
+    {
+        if (pHashTable[i].record != NULL)
+        {
+            free(pHashTable[i].record);
+        }
+    }
+    free(pHashTable);
+
+	return 0;
+
 }
